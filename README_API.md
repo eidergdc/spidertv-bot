@@ -184,10 +184,11 @@ spidertv-bot/
 └── package.json                    # 📦 Dependências
 ```
 
-## ⏱️ **Tempo de Processamento**
+## ⏱️ **Tempo de Processamento (OTIMIZADO)**
 
-- **Por servidor:** ~2 minutos
-- **Total (3 servidores):** ~7 minutos
+- **Por servidor:** ~1.5 minutos (otimizado!)
+- **Total (3 servidores):** ~5 minutos (vs 7 minutos antes)
+- **Login otimizado:** Colagem direta (3x mais rápido)
 - **Com verificação completa:** Inclui 30s de verificação por servidor
 
 ## 🔄 **Cenário Make.com - Múltiplos Pagamentos**
@@ -201,15 +202,15 @@ spidertv-bot/
 
 ### ✅ **Como o Sistema Resolve:**
 ```
-16:45:00 - Cliente A: PROCESSANDO (7 min)
+16:45:00 - Cliente A: PROCESSANDO (5 min)
 16:45:30 - Cliente B: FILA posição 1 
 16:45:45 - Cliente C: FILA posição 2
 
-16:52:00 - Cliente A: CONCLUÍDO ✅
-16:52:01 - Cliente B: PROCESSANDO (7 min)
-16:59:01 - Cliente B: CONCLUÍDO ✅  
-16:59:02 - Cliente C: PROCESSANDO (7 min)
-17:06:02 - Cliente C: CONCLUÍDO ✅
+16:50:00 - Cliente A: CONCLUÍDO ✅
+16:50:01 - Cliente B: PROCESSANDO (5 min)
+16:55:01 - Cliente B: CONCLUÍDO ✅  
+16:55:02 - Cliente C: PROCESSANDO (5 min)
+17:00:02 - Cliente C: CONCLUÍDO ✅
 ```
 
 ### 🎯 **Vantagens:**

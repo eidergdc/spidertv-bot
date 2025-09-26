@@ -75,17 +75,23 @@ async function renovar6MesesServidor1(clienteId) {
         
         if (userField && passField) {
             await userField.click();
-            await userField.type('Eider Goncalves', { delay: 80 });
-            await sleep(300);
+            await page.evaluate((text) => navigator.clipboard.writeText(text), 'Eider Goncalves');
+            await page.keyboard.down('Control');
+            await page.keyboard.press('KeyV');
+            await page.keyboard.up('Control');
+            await sleep(100);
             
             await passField.click();
-            await passField.type('Goncalves1@', { delay: 80 });
-            await sleep(300);
+            await page.evaluate((text) => navigator.clipboard.writeText(text), 'Goncalves1@');
+            await page.keyboard.down('Control');
+            await page.keyboard.press('KeyV');
+            await page.keyboard.up('Control');
+            await sleep(100);
             
             const loginBtn = await page.$('#button-login');
             if (loginBtn) {
                 await loginBtn.click();
-                await sleep(4000);
+                await sleep(2000);
                 log('Login realizado!', 'success');
             }
         } else {
@@ -107,7 +113,7 @@ async function renovar6MesesServidor1(clienteId) {
             await searchField.click();
             await searchField.type(clienteId, { delay: 80 });
             await page.keyboard.press('Enter');
-            await sleep(4000);
+            await sleep(2000);
             log('Busca realizada!', 'success');
         } else {
             throw new Error('Campo de busca não encontrado');
@@ -146,7 +152,7 @@ async function renovar6MesesServidor1(clienteId) {
             if (confirmBtn) {
                 log('Clicando no botão Confirmar...');
                 await confirmBtn.click();
-                await sleep(4000);
+                await sleep(2000);
                 log('Renovação confirmada!', 'success');
             } else {
                 throw new Error('Botão Confirmar não encontrado');

@@ -75,17 +75,23 @@ async function renovar3MesesCorreto(clienteId) {
         
         if (userField && passField) {
             await userField.click();
-            await userField.type('tropicalplay', { delay: 80 });
-            await sleep(300);
+            await page.evaluate((text) => navigator.clipboard.writeText(text), 'tropicalplay');
+            await page.keyboard.down('Control');
+            await page.keyboard.press('KeyV');
+            await page.keyboard.up('Control');
+            await sleep(100);
             
             await passField.click();
-            await passField.type('Virginia13', { delay: 80 });
-            await sleep(300);
+            await page.evaluate((text) => navigator.clipboard.writeText(text), 'Virginia13');
+            await page.keyboard.down('Control');
+            await page.keyboard.press('KeyV');
+            await page.keyboard.up('Control');
+            await sleep(100);
             
             const loginBtn = await page.$('button[type="submit"]');
             if (loginBtn) {
                 await loginBtn.click();
-                await sleep(4000);
+                await sleep(2000);
                 log('Login realizado!', 'success');
             }
         }
@@ -106,7 +112,7 @@ async function renovar3MesesCorreto(clienteId) {
             await page.keyboard.press('Delete');
             await searchField.type(clienteId, { delay: 80 });
             await page.keyboard.press('Enter');
-            await sleep(4000);
+            await sleep(2000);
         }
         
         // Procurar cliente na tabela e detectar plano atual
@@ -168,7 +174,7 @@ async function renovar3MesesCorreto(clienteId) {
         if (renewBtn) {
             log('Clicando no botão de renovação...');
             await renewBtn.click();
-            await sleep(4000);
+            await sleep(2000);
             
             // Aguardar modal carregar
             try {
@@ -228,7 +234,7 @@ async function renovar3MesesCorreto(clienteId) {
                     
                     for (let i = 0; i < navegacoes; i++) {
                         await page.keyboard.press('ArrowUp');
-                        await sleep(300);
+                        await sleep(100);
                         log(`Navegação ${i + 1}/${navegacoes} (para cima)...`, 'info');
                     }
                 } else if (posicaoAtual < posicaoDestino) {
@@ -238,7 +244,7 @@ async function renovar3MesesCorreto(clienteId) {
                     
                     for (let i = 0; i < navegacoes; i++) {
                         await page.keyboard.press('ArrowDown');
-                        await sleep(300);
+                        await sleep(100);
                         log(`Navegação ${i + 1}/${navegacoes} (para baixo)...`, 'info');
                     }
                 } else {
@@ -331,7 +337,7 @@ async function renovar3MesesCorreto(clienteId) {
                 if (btnText.includes('Renovar')) {
                     log(`Confirmando renovação: "${btnText}"`, 'info');
                     await confirmBtn.click();
-                    await sleep(4000);
+                    await sleep(2000);
                     
                     // Verificar resultado
                     log('Verificando resultado...', 'verify');

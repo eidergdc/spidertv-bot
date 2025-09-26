@@ -74,17 +74,23 @@ async function renovar12MesesServidor1(clienteId) {
         
         if (userField && passField) {
             await userField.click();
-            await userField.type('Eider Goncalves', { delay: 80 });
-            await sleep(300);
+            await page.evaluate((text) => navigator.clipboard.writeText(text), 'Eider Goncalves');
+            await page.keyboard.down('Control');
+            await page.keyboard.press('KeyV');
+            await page.keyboard.up('Control');
+            await sleep(100);
             
             await passField.click();
-            await passField.type('Goncalves1', { delay: 80 });
-            await sleep(300);
+            await page.evaluate((text) => navigator.clipboard.writeText(text), 'Goncalves1');
+            await page.keyboard.down('Control');
+            await page.keyboard.press('KeyV');
+            await page.keyboard.up('Control');
+            await sleep(100);
             
             const loginBtn = await page.$('button[type="submit"]');
             if (loginBtn) {
                 await loginBtn.click();
-                await sleep(4000);
+                await sleep(2000);
                 log('Login realizado!', 'success');
             }
         }
@@ -102,7 +108,7 @@ async function renovar12MesesServidor1(clienteId) {
             await searchField.click();
             await searchField.type(clienteId, { delay: 80 });
             await page.keyboard.press('Enter');
-            await sleep(4000);
+            await sleep(2000);
         }
         
         // Clicar no cliente
@@ -110,14 +116,14 @@ async function renovar12MesesServidor1(clienteId) {
         const clienteLink = await page.$(`a[href*="${clienteId}"]`);
         if (clienteLink) {
             await clienteLink.click();
-            await sleep(4000);
+            await sleep(2000);
             log('Cliente encontrado e selecionado!', 'success');
         } else {
             // Tentar primeira linha se não encontrar por link
             const firstRow = await page.$('tbody tr:first-child a');
             if (firstRow) {
                 await firstRow.click();
-                await sleep(4000);
+                await sleep(2000);
                 log('Usando primeira linha da tabela', 'warning');
             } else {
                 throw new Error(`Cliente ${clienteId} não encontrado`);
@@ -204,7 +210,7 @@ async function renovar12MesesServidor1(clienteId) {
                 const btnText = await page.evaluate(btn => btn.textContent?.trim() || btn.value || '', confirmBtn);
                 log(`Confirmando renovação: "${btnText}"`, 'info');
                 await confirmBtn.click();
-                await sleep(4000);
+                await sleep(2000);
                 log('Renovação confirmada!', 'success');
             } else {
                 log('Botão de confirmação não encontrado', 'warning');
