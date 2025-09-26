@@ -1,11 +1,14 @@
 {
-  "name": "spidertv-playwright",
+  "name": "spidertv-bot",
   "type": "module",
   "version": "1.0.0",
-  "description": "Automação SpiderTV com Playwright (login persistente) + API HTTP",
-  "main": "index.js",
+  "description": "🕷️ Bot de automação para renovação de clientes nos servidores SpiderTV, TropicalPlayTV e Premium Server",
+  "main": "server-3-servidores.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server-3-servidores.js",
+    "dev": "node server-3-servidores.js",
+    "server": "node server-3-servidores.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "axios": "^1.12.2",
@@ -14,5 +17,15 @@
     "node-fetch": "^2.7.0",
     "playwright": "^1.46.0",
     "puppeteer": "^24.22.1"
-  }
+  },
+  "keywords": [
+    "spidertv",
+    "tropicalplaytv",
+    "premium-server",
+    "automation",
+    "bot",
+    "renewal"
+  ],
+  "author": "eidergdc",
+  "license": "MIT"
 }
