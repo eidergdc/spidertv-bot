@@ -20,6 +20,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 
+// 🌐 Servir arquivos estáticos da pasta public
+app.use(express.static('public'));
+
 const PORT = process.env.PORT || 8080;
 
 // 🔄 SISTEMA DE FILA
@@ -351,7 +354,7 @@ app.get('/fila', (req, res) => {
 });
 
 // Rota de informações
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
     res.json({
         server: 'Bot 3 Servidores',
         version: '1.0.0',
@@ -374,21 +377,18 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+    console.log(`🌐 Interface Web: http://localhost:${PORT}`);
     console.log('');
-    console.log('📋 COMANDOS DISPONÍVEIS:');
+    console.log('📋 COMANDOS MAKE DISPONÍVEIS:');
+    console.log('  make start       - Iniciar servidor');
+    console.log('  make health      - Verificar status');
+    console.log('  make status      - Ver fila');
+    console.log('  make stop        - Parar servidor');
     console.log('');
-    console.log('🎯 RENOVAR NOS 3 SERVIDORES:');
+    console.log('🎯 RENOVAR VIA CURL:');
     console.log(`curl -X POST http://localhost:${PORT}/activate/3servidores \\`);
     console.log(`  -H "Content-Type: application/json" \\`);
     console.log(`  -d '{"code":"648718886","months":6}'`);
-    console.log('');
-    console.log('🎯 RENOVAR SERVIDOR INDIVIDUAL:');
-    console.log(`curl -X POST http://localhost:${PORT}/activate/servidor2 \\`);
-    console.log(`  -H "Content-Type: application/json" \\`);
-    console.log(`  -d '{"code":"648718886","months":1}'`);
-    console.log('');
-    console.log('🔄 VERIFICAR FILA:');
-    console.log(`curl http://localhost:${PORT}/fila`);
     console.log('');
     console.log('✅ Meses disponíveis: 1, 3, 6, 12');
     console.log('🔄 Sistema de Fila: Evita conflitos entre renovações simultâneas');

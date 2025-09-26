@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🕷️ SpiderTV Bot - Interface de Renovação</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Banner Principal -->
+    <header class="banner">
+        <h1>🕷️ SpiderTV Bot</h1>
+        <p>Interface de Renovação de Clientes</p>
+        <div class="status-indicator">
+            <span id="server-status">🔄 Verificando...</span>
+        </div>
+    </header>
+
+    <!-- Container Principal -->
+    <main class="container">
+        <!-- Renovação nos 3 Servidores -->
+        <section class="block">
+            <h2>🎯 Renovar nos 3 Servidores</h2>
+            <p>TropicalPlayTV + SpiderTV + Premium Server</p>
+            <form id="form-3servidores" class="renewal-form">
+                <div class="form-group">
+                    <label for="code-3servidores">Código do Cliente:</label>
+                    <input type="text" id="code-3servidores" name="code" placeholder="Ex: 648718886" required>
+                </div>
+                <div class="form-group">
+                    <label for="months-3servidores">Período:</label>
+                    <select id="months-3servidores" name="months" required>
+                        <option value="1">1 Mês</option>
+                        <option value="3">3 Meses</option>
+                        <option value="6" selected>6 Meses</option>
+                        <option value="12">12 Meses</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">🚀 Renovar nos 3 Servidores</button>
+            </form>
+        </section>
+
+        <!-- Renovação Individual -->
+        <section class="block">
+            <h2>🎯 Renovação Individual</h2>
+            <p>Escolha um servidor específico</p>
+            
+            <!-- Servidor 1 - TropicalPlayTV -->
+            <div class="server-section">
+                <h3>🌴 Servidor 1 - TropicalPlayTV</h3>
+                <form id="form-servidor1" class="renewal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="text" id="code-servidor1" name="code" placeholder="Código do Cliente" required>
+                        </div>
+                        <div class="form-group">
+                            <select id="months-servidor1" name="months" required>
+                                <option value="1">1 Mês</option>
+                                <option value="3">3 Meses</option>
+                                <option value="6">6 Meses</option>
+                                <option value="12">12 Meses</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Renovar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Servidor 2 - SpiderTV -->
+            <div class="server-section">
+                <h3>🕷️ Servidor 2 - SpiderTV</h3>
+                <form id="form-servidor2" class="renewal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="text" id="code-servidor2" name="code" placeholder="Código do Cliente" required>
+                        </div>
+                        <div class="form-group">
+                            <select id="months-servidor2" name="months" required>
+                                <option value="1">1 Mês</option>
+                                <option value="3">3 Meses</option>
+                                <option value="6">6 Meses</option>
+                                <option value="12">12 Meses</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Renovar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Servidor 3 - Premium -->
+            <div class="server-section">
+                <h3>💎 Servidor 3 - Premium Server</h3>
+                <form id="form-servidor3" class="renewal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="text" id="code-servidor3" name="code" placeholder="Código do Cliente" required>
+                        </div>
+                        <div class="form-group">
+                            <select id="months-servidor3" name="months" required>
+                                <option value="1">1 Mês</option>
+                                <option value="3">3 Meses</option>
+                                <option value="6">6 Meses</option>
+                                <option value="12">12 Meses</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Renovar</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Status da Fila -->
+        <section class="block">
+            <h2>📋 Status da Fila</h2>
+            <div id="queue-status">
+                <p>🔄 Carregando status da fila...</p>
+            </div>
+            <button id="refresh-queue" class="btn btn-outline">🔄 Atualizar Fila</button>
+        </section>
+
+        <!-- Log de Atividades -->
+        <section class="block">
+            <h2>📝 Log de Atividades</h2>
+            <div id="activity-log" class="log-container">
+                <p class="log-entry">✅ Interface carregada com sucesso</p>
+            </div>
+            <button id="clear-log" class="btn btn-outline">🗑️ Limpar Log</button>
+        </section>
+    </main>
+
+    <!-- Modal de Loading -->
+    <div id="loading-modal" class="modal">
+        <div class="modal-content">
+            <div class="spinner"></div>
+            <p id="loading-text">Processando renovação...</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>🕷️ SpiderTV Bot v1.0.0 | Desenvolvido por eidergdc</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
