@@ -1,6 +1,11 @@
 /**
  * Servidor HTTP para renovação nos 3 servidores
  * TropicalPlayTV + SpiderTV + Premium Server
+ * 
+ * ✅ SISTEMA DE FILA IMPLEMENTADO
+ * - Processa uma renovação por vez
+ * - Enfileira requisições simultâneas
+ * - Evita conflitos entre navegadores
  */
 
 import 'dotenv/config';
@@ -17,8 +22,13 @@ app.use(express.json({ limit: '2mb' }));
 
 const PORT = process.env.PORT || 8080;
 
+// 🔄 SISTEMA DE FILA
+let filaRenovacao = [];
+let processandoAtualmente = false;
+
 console.log('🕷️ Servidor Bot 3 Servidores');
 console.log('🌐 TropicalPlayTV + SpiderTV + Premium Server');
+console.log('🔄 Sistema de Fila: ATIVADO');
 
 // Health check
 app.get('/health', (req, res) => {
@@ -30,113 +40,200 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Renovação nos 3 servidores
-app.post('/activate/3servidores', async (req, res) => {
+// 🔄 FUNÇÃO PARA PROCESSAR FILA
+async function processarFila() {
+    if (processandoAtualmente || filaRenovacao.length === 0) {
+        return;
+    }
+
+    processandoAtualmente = true;
+    const { req, res, tipo, servidor, nomeServidor } = filaRenovacao.shift();
+
+    console.log(`\n📋 PROCESSANDO FILA - ${filaRenovacao.length} restantes`);
+    console.log(`🎯 Atual: ${req.body.code} (${req.body.months || 1} meses)`);
+
     try {
-        const { code, months = 1 } = req.body || {};
-        
-        if (!code) {
-            return res.status(400).json({ 
-                ok: false, 
-                error: 'Código do cliente é obrigatório' 
-            });
+        if (tipo === '3servidores') {
+            await executar3Servidores(req, res);
+        } else {
+            await executarServidorIndividual(req, res, servidor, nomeServidor);
         }
-
-        if (![1, 3, 6, 12].includes(months)) {
-            return res.status(400).json({ 
-                ok: false, 
-                error: 'Meses deve ser 1, 3, 6 ou 12' 
-            });
-        }
-
-        console.log(`🔄 Iniciando renovação - Cliente: ${code}, Meses: ${months}`);
-        console.log('🎯 Servidores: TropicalPlayTV → SpiderTV → Premium Server');
-
-        // Executar o comando sequencial
-        const scriptPath = path.join(__dirname, 'renovar-3-servidores-sequencial.cjs');
-        
-        return new Promise((resolve) => {
-            const child = spawn('node', [scriptPath, code, months], {
-                stdio: ['pipe', 'pipe', 'pipe'],
-                cwd: __dirname
-            });
-
-            let output = '';
-            let errorOutput = '';
-
-            child.stdout.on('data', (data) => {
-                const text = data.toString();
-                output += text;
-                console.log(text.trim());
-            });
-
-            child.stderr.on('data', (data) => {
-                const text = data.toString();
-                errorOutput += text;
-                console.error(text.trim());
-            });
-
-            child.on('close', (code_exit) => {
-                console.log(`\n🏁 Processo finalizado com código: ${code_exit}`);
-                
-                if (code_exit === 0) {
-                    // Sucesso
-                    resolve(res.json({
-                        ok: true,
-                        message: `Cliente ${code} renovado com sucesso nos 3 servidores`,
-                        cliente: code,
-                        meses: months,
-                        servidores: ['TropicalPlayTV', 'SpiderTV', 'Premium Server'],
-                        output: output.split('\n').slice(-10).join('\n') // Últimas 10 linhas
-                    }));
-                } else {
-                    // Erro
-                    resolve(res.status(500).json({
-                        ok: false,
-                        error: `Processo falhou com código ${code_exit}`,
-                        cliente: code,
-                        meses: months,
-                        output: output,
-                        errorOutput: errorOutput
-                    }));
-                }
-            });
-
-            child.on('error', (error) => {
-                console.error('💥 Erro ao executar script:', error.message);
-                resolve(res.status(500).json({
-                    ok: false,
-                    error: `Erro ao executar: ${error.message}`,
-                    cliente: code,
-                    meses: months
-                }));
-            });
-        });
-
     } catch (error) {
-        console.error('💥 Erro:', error.message);
-        return res.status(500).json({
+        console.error('💥 Erro na fila:', error.message);
+        res.status(500).json({
             ok: false,
             error: error.message
         });
+    } finally {
+        processandoAtualmente = false;
+        // Processar próximo da fila
+        setTimeout(processarFila, 1000);
     }
+}
+
+// Renovação nos 3 servidores
+app.post('/activate/3servidores', async (req, res) => {
+    const { code, months = 1 } = req.body || {};
+    
+    if (!code) {
+        return res.status(400).json({ 
+            ok: false, 
+            error: 'Código do cliente é obrigatório' 
+        });
+    }
+
+    if (![1, 3, 6, 12].includes(months)) {
+        return res.status(400).json({ 
+            ok: false, 
+            error: 'Meses deve ser 1, 3, 6 ou 12' 
+        });
+    }
+
+    // Adicionar à fila
+    filaRenovacao.push({
+        req,
+        res,
+        tipo: '3servidores',
+        timestamp: new Date().toISOString()
+    });
+
+    console.log(`📥 ADICIONADO À FILA: Cliente ${code} (${months} meses)`);
+    console.log(`📋 Posição na fila: ${filaRenovacao.length}`);
+    
+    if (processandoAtualmente) {
+        console.log(`⏳ Aguardando... Processando outro cliente`);
+    }
+
+    // Iniciar processamento da fila
+    processarFila();
 });
+
+// Função para executar 3 servidores
+async function executar3Servidores(req, res) {
+    const { code, months = 1 } = req.body || {};
+
+    console.log(`🔄 Iniciando renovação - Cliente: ${code}, Meses: ${months}`);
+    console.log('🎯 Servidores: TropicalPlayTV → SpiderTV → Premium Server');
+
+    // Executar o comando sequencial
+    const scriptPath = path.join(__dirname, 'renovar-3-servidores-sequencial.cjs');
+    
+    return new Promise((resolve) => {
+        const child = spawn('node', [scriptPath, code, months], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            cwd: __dirname
+        });
+
+        let output = '';
+        let errorOutput = '';
+
+        child.stdout.on('data', (data) => {
+            const text = data.toString();
+            output += text;
+            console.log(text.trim());
+        });
+
+        child.stderr.on('data', (data) => {
+            const text = data.toString();
+            errorOutput += text;
+            console.error(text.trim());
+        });
+
+        child.on('close', (code_exit) => {
+            console.log(`\n🏁 Processo finalizado com código: ${code_exit}`);
+            
+            if (code_exit === 0) {
+                // Sucesso
+                resolve(res.json({
+                    ok: true,
+                    message: `Cliente ${code} renovado com sucesso nos 3 servidores`,
+                    cliente: code,
+                    meses: months,
+                    servidores: ['TropicalPlayTV', 'SpiderTV', 'Premium Server'],
+                    output: output.split('\n').slice(-10).join('\n'), // Últimas 10 linhas
+                    filaRestante: filaRenovacao.length
+                }));
+            } else {
+                // Erro
+                resolve(res.status(500).json({
+                    ok: false,
+                    error: `Processo falhou com código ${code_exit}`,
+                    cliente: code,
+                    meses: months,
+                    output: output,
+                    errorOutput: errorOutput,
+                    filaRestante: filaRenovacao.length
+                }));
+            }
+        });
+
+        child.on('error', (error) => {
+            console.error('💥 Erro ao executar script:', error.message);
+            resolve(res.status(500).json({
+                ok: false,
+                error: `Erro ao executar: ${error.message}`,
+                cliente: code,
+                meses: months,
+                filaRestante: filaRenovacao.length
+            }));
+        });
+    });
+}
 
 // Renovação individual por servidor
 app.post('/activate/servidor1', async (req, res) => {
-    return executeIndividualServer(req, res, 'servidor1', 'TropicalPlayTV');
+    return adicionarFilaIndividual(req, res, 'servidor1', 'TropicalPlayTV');
 });
 
 app.post('/activate/servidor2', async (req, res) => {
-    return executeIndividualServer(req, res, 'servidor2', 'SpiderTV');
+    return adicionarFilaIndividual(req, res, 'servidor2', 'SpiderTV');
 });
 
 app.post('/activate/servidor3', async (req, res) => {
-    return executeIndividualServer(req, res, 'servidor3', 'Premium Server');
+    return adicionarFilaIndividual(req, res, 'servidor3', 'Premium Server');
 });
 
+// Adicionar servidor individual à fila
+function adicionarFilaIndividual(req, res, servidor, nomeServidor) {
+    const { code, months = 1 } = req.body || {};
+    
+    if (!code) {
+        return res.status(400).json({ 
+            ok: false, 
+            error: 'Código do cliente é obrigatório' 
+        });
+    }
+
+    if (![1, 3, 6, 12].includes(months)) {
+        return res.status(400).json({ 
+            ok: false, 
+            error: 'Meses deve ser 1, 3, 6 ou 12' 
+        });
+    }
+
+    // Adicionar à fila
+    filaRenovacao.push({
+        req,
+        res,
+        tipo: 'individual',
+        servidor,
+        nomeServidor,
+        timestamp: new Date().toISOString()
+    });
+
+    console.log(`📥 ADICIONADO À FILA: ${nomeServidor} - Cliente ${code} (${months} meses)`);
+    console.log(`📋 Posição na fila: ${filaRenovacao.length}`);
+    
+    if (processandoAtualmente) {
+        console.log(`⏳ Aguardando... Processando outro cliente`);
+    }
+
+    // Iniciar processamento da fila
+    processarFila();
+}
+
 // Função para executar servidor individual
-async function executeIndividualServer(req, res, servidor, nomeServidor) {
+async function executarServidorIndividual(req, res, servidor, nomeServidor) {
     try {
         const { code, months = 1 } = req.body || {};
         
@@ -199,7 +296,8 @@ async function executeIndividualServer(req, res, servidor, nomeServidor) {
                         cliente: code,
                         meses: months,
                         servidor: nomeServidor,
-                        output: output.split('\n').slice(-5).join('\n')
+                        output: output.split('\n').slice(-5).join('\n'),
+                        filaRestante: filaRenovacao.length
                     }));
                 } else {
                     resolve(res.status(500).json({
@@ -209,7 +307,8 @@ async function executeIndividualServer(req, res, servidor, nomeServidor) {
                         meses: months,
                         servidor: nomeServidor,
                         output: output,
-                        errorOutput: errorOutput
+                        errorOutput: errorOutput,
+                        filaRestante: filaRenovacao.length
                     }));
                 }
             });
@@ -221,7 +320,8 @@ async function executeIndividualServer(req, res, servidor, nomeServidor) {
                     error: `Erro ao executar ${nomeServidor}: ${error.message}`,
                     cliente: code,
                     meses: months,
-                    servidor: nomeServidor
+                    servidor: nomeServidor,
+                    filaRestante: filaRenovacao.length
                 }));
             });
         });
@@ -234,6 +334,21 @@ async function executeIndividualServer(req, res, servidor, nomeServidor) {
         });
     }
 }
+
+// 📊 Status da fila
+app.get('/fila', (req, res) => {
+    res.json({
+        filaAtual: filaRenovacao.length,
+        processandoAtualmente,
+        proximosClientes: filaRenovacao.slice(0, 5).map(item => ({
+            cliente: item.req.body.code,
+            meses: item.req.body.months || 1,
+            tipo: item.tipo,
+            servidor: item.nomeServidor || '3 Servidores',
+            timestamp: item.timestamp
+        }))
+    });
+});
 
 // Rota de informações
 app.get('/', (req, res) => {
@@ -272,5 +387,9 @@ app.listen(PORT, () => {
     console.log(`  -H "Content-Type: application/json" \\`);
     console.log(`  -d '{"code":"648718886","months":1}'`);
     console.log('');
+    console.log('🔄 VERIFICAR FILA:');
+    console.log(`curl http://localhost:${PORT}/fila`);
+    console.log('');
     console.log('✅ Meses disponíveis: 1, 3, 6, 12');
+    console.log('🔄 Sistema de Fila: Evita conflitos entre renovações simultâneas');
 });

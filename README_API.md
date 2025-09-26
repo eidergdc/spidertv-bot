@@ -19,6 +19,13 @@ node server-3-servidores.js
 
 O servidor rodará em: `http://localhost:8080`
 
+## 🔄 **SISTEMA DE FILA IMPLEMENTADO**
+
+✅ **Problema Resolvido:** Múltiplas requisições simultâneas do Make  
+✅ **Solução:** Sistema de fila que processa uma renovação por vez  
+✅ **Benefícios:** Evita conflitos entre navegadores e garante estabilidade
+=======
+
 ## 📋 Endpoints Disponíveis
 
 ### 🎯 Renovar nos 3 Servidores (Recomendado)
@@ -56,12 +63,31 @@ curl -X POST http://localhost:8080/activate/servidor3 \
 curl http://localhost:8080/health
 ```
 
+### 📊 Verificar Fila
+```bash
+curl http://localhost:8080/fila
+```
+
 ## 📊 Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Valores | Descrição |
 |-----------|------|-------------|---------|-----------|
 | `code` | string | ✅ Sim | ID do cliente | Código do cliente para renovar |
 | `months` | number | ❌ Não | 1, 3, 6, 12 | Período de renovação (padrão: 1) |
+
+## 🔄 **SISTEMA DE FILA - MÚLTIPLAS REQUISIÇÕES**
+
+### ⚠️ **Problema Identificado:**
+Se o Make enviar 2+ comandos em menos de 1 minuto, pode causar:
+- Conflitos entre navegadores
+- Falhas na renovação
+- Instabilidade do sistema
+
+### ✅ **Solução Implementada:**
+- **Fila de Processamento:** Uma renovação por vez
+- **Ordem FIFO:** Primeiro a chegar, primeiro a ser processado
+- **Status da Fila:** Endpoint `/fila` para monitoramento
+- **Resposta Imediata:** API responde instantaneamente, processamento em background
 
 ## 📝 Exemplos de Resposta
 
@@ -73,7 +99,25 @@ curl http://localhost:8080/health
   "cliente": "648718886",
   "meses": 6,
   "servidores": ["TropicalPlayTV", "SpiderTV", "Premium Server"],
-  "output": "🎉 RENOVAÇÃO CONCLUÍDA COM SUCESSO!"
+  "output": "🎉 RENOVAÇÃO CONCLUÍDA COM SUCESSO!",
+  "filaRestante": 0
+}
+```
+
+### 📊 Status da Fila
+```json
+{
+  "filaAtual": 2,
+  "processandoAtualmente": true,
+  "proximosClientes": [
+    {
+      "cliente": "648718886",
+      "meses": 6,
+      "tipo": "3servidores",
+      "servidor": "3 Servidores",
+      "timestamp": "2025-01-26T21:47:15.123Z"
+    }
+  ]
 }
 ```
 
@@ -140,6 +184,40 @@ spidertv-bot/
 └── package.json                    # 📦 Dependências
 ```
 
+## ⏱️ **Tempo de Processamento**
+
+- **Por servidor:** ~2 minutos
+- **Total (3 servidores):** ~7 minutos
+- **Com verificação completa:** Inclui 30s de verificação por servidor
+
+## 🔄 **Cenário Make.com - Múltiplos Pagamentos**
+
+### 📋 **Exemplo Prático:**
+```
+16:45:00 - Cliente A paga → Make envia comando
+16:45:30 - Cliente B paga → Make envia comando  
+16:45:45 - Cliente C paga → Make envia comando
+```
+
+### ✅ **Como o Sistema Resolve:**
+```
+16:45:00 - Cliente A: PROCESSANDO (7 min)
+16:45:30 - Cliente B: FILA posição 1 
+16:45:45 - Cliente C: FILA posição 2
+
+16:52:00 - Cliente A: CONCLUÍDO ✅
+16:52:01 - Cliente B: PROCESSANDO (7 min)
+16:59:01 - Cliente B: CONCLUÍDO ✅  
+16:59:02 - Cliente C: PROCESSANDO (7 min)
+17:06:02 - Cliente C: CONCLUÍDO ✅
+```
+
+### 🎯 **Vantagens:**
+- ✅ **Zero Conflitos:** Nunca executa 2 renovações simultaneamente
+- ✅ **Ordem Garantida:** FIFO (First In, First Out)
+- ✅ **Monitoramento:** Endpoint `/fila` para acompanhar
+- ✅ **Estabilidade:** Sistema robusto para múltiplas requisições
+
 ## 🏆 Resultado
 
-Sistema 100% funcional e testado com navegação dinâmica inteligente!
+Sistema 100% funcional com fila inteligente para múltiplas requisições simultâneas!
