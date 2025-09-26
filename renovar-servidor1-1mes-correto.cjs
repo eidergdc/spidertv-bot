@@ -74,17 +74,17 @@ async function renovar1MesServidor1(clienteId) {
         
         if (userField && passField) {
             await userField.click();
-            await page.evaluate((text) => navigator.clipboard.writeText(text), 'Eider Goncalves');
-            await page.keyboard.down('Control');
-            await page.keyboard.press('KeyV');
-            await page.keyboard.up('Control');
+            await page.evaluate((text, element) => {
+                element.value = text;
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+            }, 'Eider Goncalves', await page.evaluateHandle(() => document.activeElement));
             await sleep(100);
             
             await passField.click();
-            await page.evaluate((text) => navigator.clipboard.writeText(text), 'Goncalves1');
-            await page.keyboard.down('Control');
-            await page.keyboard.press('KeyV');
-            await page.keyboard.up('Control');
+            await page.evaluate((text, element) => {
+                element.value = text;
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+            }, 'Goncalves1', await page.evaluateHandle(() => document.activeElement));
             await sleep(100);
             
             const loginBtn = await page.$('button[type="submit"]');
@@ -106,7 +106,10 @@ async function renovar1MesServidor1(clienteId) {
         const searchField = await page.$('input[name="search"]');
         if (searchField) {
             await searchField.click();
-            await searchField.type(clienteId, { delay: 80 });
+            await searchField.evaluate((el, text) => {
+                el.value = text;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+            }, clienteId);
             await page.keyboard.press('Enter');
             await sleep(2000);
         }

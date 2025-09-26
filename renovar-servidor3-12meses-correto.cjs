@@ -75,17 +75,17 @@ async function renovar12MesesServidor3(clienteId) {
         
         if (userField && passField) {
             await userField.click();
-            await page.evaluate((text) => navigator.clipboard.writeText(text), 'eidergdc');
-            await page.keyboard.down('Control');
-            await page.keyboard.press('KeyV');
-            await page.keyboard.up('Control');
+            await page.evaluate((text, element) => {
+                element.value = text;
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+            }, 'eidergdc', await page.evaluateHandle(() => document.activeElement));
             await sleep(100);
             
             await passField.click();
-            await page.evaluate((text) => navigator.clipboard.writeText(text), 'Premium2025@');
-            await page.keyboard.down('Control');
-            await page.keyboard.press('KeyV');
-            await page.keyboard.up('Control');
+            await page.evaluate((text, element) => {
+                element.value = text;
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+            }, 'Premium2025@', await page.evaluateHandle(() => document.activeElement));
             await sleep(100);
             
             const loginBtn = await page.$('button[type="submit"]');
@@ -110,7 +110,10 @@ async function renovar12MesesServidor3(clienteId) {
         if (searchField) {
             await searchField.click({ clickCount: 3 });
             await page.keyboard.press('Delete');
-            await searchField.type(clienteId, { delay: 80 });
+            await searchField.evaluate((el, text) => {
+                el.value = text;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+            }, clienteId);
             await page.keyboard.press('Enter');
             await sleep(2000);
         }

@@ -75,17 +75,17 @@ async function renovar6MesesServidor1(clienteId) {
         
         if (userField && passField) {
             await userField.click();
-            await page.evaluate((text) => navigator.clipboard.writeText(text), 'Eider Goncalves');
-            await page.keyboard.down('Control');
-            await page.keyboard.press('KeyV');
-            await page.keyboard.up('Control');
+            await page.evaluate((text, element) => {
+                element.value = text;
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+            }, 'Eider Goncalves', await page.evaluateHandle(() => document.activeElement));
             await sleep(100);
             
             await passField.click();
-            await page.evaluate((text) => navigator.clipboard.writeText(text), 'Goncalves1@');
-            await page.keyboard.down('Control');
-            await page.keyboard.press('KeyV');
-            await page.keyboard.up('Control');
+            await page.evaluate((text, element) => {
+                element.value = text;
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+            }, 'Goncalves1@', await page.evaluateHandle(() => document.activeElement));
             await sleep(100);
             
             const loginBtn = await page.$('#button-login');
@@ -111,7 +111,10 @@ async function renovar6MesesServidor1(clienteId) {
         const searchField = await page.$('input[type="search"].form-control.form-control-sm');
         if (searchField) {
             await searchField.click();
-            await searchField.type(clienteId, { delay: 80 });
+            await searchField.evaluate((el, text) => {
+                el.value = text;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+            }, clienteId);
             await page.keyboard.press('Enter');
             await sleep(2000);
             log('Busca realizada!', 'success');
@@ -139,7 +142,10 @@ async function renovar6MesesServidor1(clienteId) {
             if (monthsField) {
                 // Limpar campo e inserir 6
                 await monthsField.click({ clickCount: 3 });
-                await monthsField.type('6', { delay: 100 });
+                await monthsField.evaluate((el, text) => {
+                el.value = text;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+            }, '6');
                 await sleep(1000);
                 log('6 meses inserido no campo!', 'success');
             } else {
