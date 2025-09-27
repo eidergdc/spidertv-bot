@@ -259,7 +259,12 @@ async function executarServidorIndividual(req, res, servidor, nomeServidor) {
         // Determinar o script correto
         let scriptName;
         if (servidor === 'servidor1') {
-            scriptName = `renovar-servidor1-${months}meses-correto.cjs`;
+            // Para servidor1, usar os novos scripts com nomenclatura correta
+            if (months === 1) {
+                scriptName = `renovar-servidor1-1mes-novo.cjs`;
+            } else {
+                scriptName = `renovar-servidor1-${months}meses-novo.cjs`;
+            }
         } else if (servidor === 'servidor2') {
             scriptName = `renovar-servidor2-${months}meses-correto.cjs`;
         } else if (servidor === 'servidor3') {

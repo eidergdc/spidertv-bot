@@ -63,7 +63,7 @@ async function renovar6MesesServidor1(clienteId) {
         
         // Login
         log('Fazendo login...');
-        await page.goto('https://painel.tropicalplaytv.com/login.php', { 
+        await page.goto('https://painel.tropicalplaytv.com/', { 
             waitUntil: 'domcontentloaded', 
             timeout: 30000 
         });
