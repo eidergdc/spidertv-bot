@@ -2,7 +2,7 @@
  * Bot SpiderTV Final - Renovação Completa do Cliente 648718886
  */
 
-const puppeteer = require('puppeteer');
+const { chromium } = require('playwright');
 
 console.log('🕷️ Bot SpiderTV - Renovação Final Cliente 648718886');
 
@@ -15,36 +15,36 @@ async function renovarClienteFinal() {
     
     try {
         console.log('🚀 Lançando Chromium...');
-        
-        browser = await puppeteer.launch({
+
+        browser = await chromium.launch({
             headless: false,
             slowMo: 500,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-blink-features=AutomationControlled',
-                '--disable-web-security'
+                '--disable-web-security',
+                '--disable-features=VizDisplayCompositor'
             ]
         });
-        
+
         console.log('✅ Chromium lançado!');
-        
+
         const page = await browser.newPage();
-        
+
         // Configurações anti-detecção
-        await page.evaluateOnNewDocument(() => {
+        await page.addInitScript(() => {
             Object.defineProperty(navigator, 'webdriver', {
                 get: () => undefined,
             });
         });
-        
-        await page.setViewport({ width: 1280, height: 720 });
-        await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        
+
+        await page.setViewportSize({ width: 1280, height: 720 });
+
         console.log('🌐 Navegando para SpiderTV...');
-        await page.goto('https://spidertv.sigma.st', { 
-            waitUntil: 'networkidle0',
-            timeout: 30000 
+        await page.goto('https://spidertv.sigma.st', {
+            waitUntil: 'networkidle',
+            timeout: 30000
         });
         
         console.log('✅ Página carregada!');
@@ -58,25 +58,15 @@ async function renovarClienteFinal() {
         // Campo de usuário - COLAR DIRETO
         const userField = await page.$('input[type="text"]');
         if (userField) {
-            console.log('👤 Colando usuário: tropicalplay');
-            await userField.click();
-            await sleep(200);
-            await page.evaluate((element, value) => {
-                element.value = value;
-                element.dispatchEvent(new Event('input', { bubbles: true }));
-            }, userField, 'tropicalplay');
+            console.log('👤 Preenchendo usuário: tropicalplay');
+            await userField.fill('tropicalplay');
         }
-        
+
         // Campo de senha - COLAR DIRETO
         const passwordField = await page.$('input[type="password"]');
         if (passwordField) {
-            console.log('🔒 Colando senha: Virginia13');
-            await passwordField.click();
-            await sleep(200);
-            await page.evaluate((element, value) => {
-                element.value = value;
-                element.dispatchEvent(new Event('input', { bubbles: true }));
-            }, passwordField, 'Virginia13');
+            console.log('🔒 Preenchendo senha: Virginia13');
+            await passwordField.fill('Virginia13');
         }
         
         await sleep(1000);
@@ -114,16 +104,10 @@ async function renovarClienteFinal() {
                 const searchField = await page.$(searchSelector);
                 if (searchField) {
                     console.log('✅ Campo de pesquisa encontrado!');
-                    
-                    await searchField.click();
-                    await sleep(300);
-                    
-                    console.log('🔍 Colando ID do cliente: 648718886');
-                    await page.evaluate((element, value) => {
-                        element.value = value;
-                        element.dispatchEvent(new Event('input', { bubbles: true }));
-                    }, searchField, '648718886');
-                    
+
+                    console.log('🔍 Preenchendo ID do cliente: 648718886');
+                    await searchField.fill('648718886');
+
                     console.log('⏎ Pressionando Enter para buscar...');
                     await searchField.press('Enter');
                     

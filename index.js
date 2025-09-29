@@ -9,7 +9,7 @@
  * .env:
  *   BASE_URL=https://painel.tropicalplaytv.com
  *   SERVER1_USER=Eider Goncalves
- *   SERVER1_PASS=Goncalves1
+ *   SERVER1_PASS=Goncalves1@
  *   PORT=8080
  *
  * Como rodar:
@@ -43,7 +43,7 @@ const PORT     = Number(process.env.PORT || 8080);
 
 // Arquivos auxiliares
 const COOKIE_PATH = path.resolve(__dirname, 'server1_session.json'); // guarda PHPSESSID
-const DEFAULT_HEADLESS = true; // headless no login (troque para false se quiser ver o navegador)
+const DEFAULT_HEADLESS = false; // headless no login (troque para false se quiser ver o navegador)
 
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 async function ensureDir(p){ try{ await fs.mkdir(p, { recursive:true }); } catch{} }
@@ -232,32 +232,111 @@ async function s1GetClientsFlexible({ code, start = 0, length = 50, phpsessid })
 /**
  * Fallback pela UI: digita no campo de pesquisa e tenta extrair o client_id
  */
-async function s1FindClientIdViaUI(code) {
+async function s1FindClientIdViaUI(code, months = 1) {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
   page.setDefaultTimeout(20000);
 
   try {
-    await page.goto(`${ORIGIN}/iptv/clients`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(500);
+    // Primeiro faz login na página principal
+    await page.goto(`${ORIGIN}/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(800);
 
-    // Detecta formulário de login
-    const needLogin = await page.$('input[type="password"], button:has-text("Login"), button:has-text("Entrar")');
-    if (needLogin) {
-      const userInput =
-        await page.$('input[name="username"], input[placeholder*="Usuário" i], input[placeholder*="Username" i], input[type="text"]:not([name="search"])');
-      const passInput =
-        await page.$('input[name="password"], input[type="password"], input[placeholder*="Senha" i], input[placeholder*="Password" i]');
-      if (!userInput || !passInput) throw new Error('Login UI: campos não encontrados.');
-      await userInput.fill(process.env.SERVER1_USER || '');
-      await passInput.fill(process.env.SERVER1_PASS || '');
-      const loginBtn =
-        await page.$('button:has-text("Entrar"), button:has-text("Login"), input[type="submit"], button:has-text("Sign in")');
-      if (!loginBtn) throw new Error('Login UI: botão não encontrado.');
+    // Verifica se precisa logar
+    const needsLogin =
+      (await page.$('input[type="password"]')) ||
+      (await page.$('button:has-text("Login"), button:has-text("Entrar"), input[type="submit"]'));
+
+    if (needsLogin) {
+      const userInput = await page.$('#username');
+      const passInput = await page.$('#password');
+      if (!userInput) throw new Error('Campo de usuário não encontrado na tela de login.');
+      if (!passInput) throw new Error('Campo de senha não encontrado na tela de login.');
+
+      await userInput.fill(USERNAME);
+      await passInput.fill(PASSWORD);
+
+      const loginBtn = await page.$('#button-login');
+      if (!loginBtn) throw new Error('Botão de login não encontrado.');
       await loginBtn.click();
+
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(1200);
+    }
+
+    // Agora vai para a página de clientes
+    await page.goto(`${ORIGIN}/iptv/clients`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(800);
+
+    // Verifica se ainda está na página de login (se redirecionou)
+    const stillNeedsLogin = await page.$('input[type="password"]');
+    if (stillNeedsLogin) {
+      console.log('🔐 Ainda na página de login, fazendo login novamente...');
+
+      // Lista todos os inputs e botões para debug
+      console.log('🔍 Listando todos os inputs na página:');
+      const allInputs = await page.$$('input');
+      for (let i = 0; i < allInputs.length; i++) {
+        const input = allInputs[i];
+        const type = await input.getAttribute('type') || 'text';
+        const name = await input.getAttribute('name') || '';
+        const placeholder = await input.getAttribute('placeholder') || '';
+        const id = await input.getAttribute('id') || '';
+        console.log(`  ${i+1}. type="${type}" name="${name}" placeholder="${placeholder}" id="${id}"`);
+      }
+
+      console.log('🔍 Listando todos os botões na página:');
+      const allButtons = await page.$$('button, input[type="submit"]');
+      for (let i = 0; i < allButtons.length; i++) {
+        const btn = allButtons[i];
+        const text = await btn.innerText().catch(()=>'');
+        const type = await btn.getAttribute('type') || '';
+        const id = await btn.getAttribute('id') || '';
+        console.log(`  ${i+1}. text="${text}" type="${type}" id="${id}"`);
+      }
+
+      // Tenta encontrar campos de login com seletores mais genéricos
+      let userInput = await page.$('#username');
+      if (!userInput) userInput = await page.$('input[name="username"]');
+      if (!userInput) userInput = await page.$('input[placeholder*="Usuário" i]');
+      if (!userInput) userInput = await page.$('input[placeholder*="Username" i]');
+      if (!userInput) userInput = await page.$('input[type="text"]:not([name="search"])');
+
+      let passInput = await page.$('#password');
+      if (!passInput) passInput = await page.$('input[name="password"]');
+      if (!passInput) passInput = await page.$('input[placeholder*="Senha" i]');
+      if (!passInput) passInput = await page.$('input[placeholder*="Password" i]');
+      if (!passInput) passInput = await page.$('input[type="password"]');
+
+      if (!userInput || !passInput) {
+        throw new Error('Campos de login não encontrados.');
+      }
+
+      console.log('✅ Campos de login encontrados, preenchendo...');
+      await userInput.fill(USERNAME);
+      await passInput.fill(PASSWORD);
+
+      // Tenta encontrar botão de login
+      let loginBtn = await page.$('#button-login');
+      if (!loginBtn) loginBtn = await page.$('button:has-text("Login")');
+      if (!loginBtn) loginBtn = await page.$('button:has-text("Entrar")');
+      if (!loginBtn) loginBtn = await page.$('input[type="submit"]');
+      if (!loginBtn) loginBtn = await page.$('button[type="submit"]');
+
+      if (!loginBtn) {
+        throw new Error('Botão de login não encontrado.');
+      }
+
+      console.log('✅ Botão de login encontrado, clicando...');
+      await loginBtn.click();
+
+      await page.waitForLoadState('domcontentloaded');
+      await page.waitForTimeout(1200);
+
+      // Vai novamente para a página de clientes após login
+      await page.goto(`${ORIGIN}/iptv/clients`, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(800);
     }
 
     // Busca o campo de pesquisa e digita o código
@@ -342,6 +421,41 @@ async function s1FindClientIdViaUI(code) {
 
     if (!clientId) throw new Error('UI: não consegui extrair client_id da primeira linha.');
     console.log(`✅ Client ID encontrado: ${clientId}`);
+
+    // Novo código para clicar no botão calendário e confirmar renovação
+    console.log('🔍 Procurando botão calendário...');
+    const calendarBtn = await firstRow.$('i.fad.fa-calendar-alt');
+    if (!calendarBtn) {
+      throw new Error('UI: botão calendário não encontrado.');
+    }
+    await calendarBtn.click();
+    await page.waitForTimeout(1000);
+
+    // Espera o modal de renovação aparecer
+    console.log('🔍 Esperando modal de renovação...');
+    const modal = await page.waitForSelector('div.bootbox.modal.fade.show', { timeout: 5000 });
+    if (!modal) {
+      throw new Error('UI: modal de renovação não apareceu.');
+    }
+
+    // Preenche a quantidade de meses no input do modal
+    const monthsInput = await modal.$('input#months');
+    if (!monthsInput) {
+      throw new Error('UI: input de meses não encontrado no modal.');
+    }
+    await monthsInput.fill(String(months));
+
+    // Clica no botão confirmar no modal
+    const confirmBtn = await modal.$('button.btn.btn-info.btnrenewplus');
+    if (!confirmBtn) {
+      throw new Error('UI: botão confirmar não encontrado no modal.');
+    }
+    await confirmBtn.click();
+
+    console.log('✅ Renovação confirmada no modal.');
+
+    await page.waitForTimeout(2000); // espera a ação completar
+
     await browser.close();
     return clientId;
   } catch (err) {
@@ -361,7 +475,7 @@ async function s1FindClientIdViaUI(code) {
  * - Tenta API (GET, depois POST);
  * - Se falhar, cai na UI pra descobrir.
  */
-async function s1FindClientIdByCode(code, phpsessid) {
+async function s1FindClientIdByCode(code, phpsessid, months = 1) {
   try {
     const data = await s1GetClientsFlexible({ code, start: 0, length: 50, phpsessid });
     const rows = data?.data || [];
@@ -378,10 +492,10 @@ async function s1FindClientIdByCode(code, phpsessid) {
     if (m) return m[1];
 
     // sem ID legível → parte pra UI
-    return await s1FindClientIdViaUI(code);
+    return await s1FindClientIdViaUI(code, months);
   } catch {
     // se a API falhar, tenta pela UI
-    return await s1FindClientIdViaUI(code);
+    return await s1FindClientIdViaUI(code, months);
   }
 }
 
@@ -408,12 +522,12 @@ async function renewServer1({ code, months = 1 }) {
   let phpsessid = await getValidPHPSESSID();
 
   // busca o client_id
-  let clientId = await s1FindClientIdByCode(code, phpsessid);
+  let clientId = await s1FindClientIdByCode(code, phpsessid, months);
   if (!clientId) {
     // sessão pode ter expirado entre chamadas — tenta login novamente
     phpsessid = await loginAndGetPHPSESSID();
     await saveSession(phpsessid);
-    clientId = await s1FindClientIdByCode(code, phpsessid);
+    clientId = await s1FindClientIdByCode(code, phpsessid, months);
     if (!clientId) throw new Error(`Cliente não encontrado para o código "${code}".`);
   }
 
@@ -433,10 +547,47 @@ async function renewServer1({ code, months = 1 }) {
   return { ok: true, clientId, response: result.raw };
 }
 
+// --------------------------- Sistema de Fila ---------------------------
+
+let filaRenovacao = [];
+let processandoAtualmente = false;
+
+console.log('🕷️ Bot Servidor 1 - Sistema de Fila: ATIVADO');
+
+/**
+ * Processa a fila de renovações (uma por vez)
+ */
+async function processarFila() {
+  if (processandoAtualmente || filaRenovacao.length === 0) {
+    return;
+  }
+
+  processandoAtualmente = true;
+  const { req, res, timestamp } = filaRenovacao.shift();
+
+  console.log(`\n📋 PROCESSANDO FILA - ${filaRenovacao.length} restantes`);
+  console.log(`🎯 Atual: ${req.body.code} (${req.body.months || 1} meses)`);
+
+  try {
+    const { code, months = 1 } = req.body || {};
+    const out = await renewServer1({ code, months: Number(months) || 1 });
+    res.json({ ok: true, ...out, filaRestante: filaRenovacao.length });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err), filaRestante: filaRenovacao.length });
+  } finally {
+    processandoAtualmente = false;
+    // Processar próximo da fila após um pequeno delay
+    setTimeout(processarFila, 1000);
+  }
+}
+
 // --------------------------- API HTTP ---------------------------
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
+
+// 🌐 Servir arquivos estáticos da pasta public
+app.use(express.static('public'));
 
 app.get('/health', async (_req, res) => {
   const sess = await loadSavedSession();
@@ -444,7 +595,21 @@ app.get('/health', async (_req, res) => {
     status: 'ok',
     base: ORIGIN,
     mode: 'server1',
-    hasSessionSaved: !!sess
+    hasSessionSaved: !!sess,
+    filaAtual: filaRenovacao.length,
+    processandoAtualmente
+  });
+});
+
+app.get('/fila', (req, res) => {
+  res.json({
+    filaAtual: filaRenovacao.length,
+    processandoAtualmente,
+    proximosClientes: filaRenovacao.slice(0, 5).map(item => ({
+      cliente: item.req.body.code,
+      meses: item.req.body.months || 1,
+      timestamp: item.timestamp
+    }))
   });
 });
 
@@ -453,8 +618,23 @@ app.post('/activate/spidertv', async (req, res) => {
     const { code, months = 1 } = req.body || {};
     if (!code) return res.status(400).json({ ok: false, error: 'code é obrigatório' });
 
-    const out = await renewServer1({ code, months: Number(months) || 1 });
-    return res.json({ ok: true, ...out });
+    // Adicionar à fila
+    filaRenovacao.push({
+      req,
+      res,
+      timestamp: new Date().toISOString()
+    });
+
+    console.log(`📥 ADICIONADO À FILA: Cliente ${code} (${months} meses)`);
+    console.log(`📋 Posição na fila: ${filaRenovacao.length}`);
+
+    if (processandoAtualmente) {
+      console.log(`⏳ Aguardando... Processando outro cliente`);
+    }
+
+    // Iniciar processamento da fila
+    processarFila();
+
   } catch (err) {
     return res.status(500).json({ ok: false, error: String(err) });
   }
@@ -464,3 +644,6 @@ app.listen(PORT, () => {
   console.log(`Servidor 1 bot rodando em http://localhost:${PORT}`);
   console.log(`Painel: ${ORIGIN}`);
 });
+
+// Adicionando log para verificar se o servidor está escutando na porta correta
+console.log(`Tentando iniciar servidor na porta ${PORT}...`);

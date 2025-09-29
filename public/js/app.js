@@ -15,25 +15,10 @@ class SpiderTVBot {
     }
 
     setupEventListeners() {
-        // Formulários de renovação
-        document.getElementById('form-3servidores').addEventListener('submit', (e) => {
+        // Formulário de renovação
+        document.getElementById('form-spidertv').addEventListener('submit', (e) => {
             e.preventDefault();
-            this.handleRenewal('3servidores', e.target);
-        });
-
-        document.getElementById('form-servidor1').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleRenewal('servidor1', e.target);
-        });
-
-        document.getElementById('form-servidor2').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleRenewal('servidor2', e.target);
-        });
-
-        document.getElementById('form-servidor3').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleRenewal('servidor3', e.target);
+            this.handleRenewal('spidertv', e.target);
         });
 
         // Botões de controle
@@ -175,12 +160,9 @@ class SpiderTVBot {
 
     getServerName(endpoint) {
         const names = {
-            '3servidores': 'Todos os Servidores',
-            'servidor1': 'TropicalPlayTV',
-            'servidor2': 'SpiderTV',
-            'servidor3': 'Premium Server'
+            'spidertv': 'TropicalPlayTV'
         };
-        return names[endpoint] || endpoint;
+        return names[endpoint] || 'TropicalPlayTV';
     }
 
     showLoading(message) {
@@ -320,13 +302,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Adicionar alguns atalhos de teclado úteis
 document.addEventListener('keydown', (e) => {
-    // Ctrl + Enter para focar no primeiro campo de código
+    // Ctrl + Enter para focar no campo de código
     if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
-        const firstCodeInput = document.getElementById('code-3servidores');
-        if (firstCodeInput) {
-            firstCodeInput.focus();
-            firstCodeInput.select();
+        const codeInput = document.getElementById('code-spidertv');
+        if (codeInput) {
+            codeInput.focus();
+            codeInput.select();
         }
     }
     

@@ -27,10 +27,10 @@ function log(mensagem, tipo = 'info') {
     console.log(`[${timestamp}] 🌴 TropicalPlayTV ${prefix} ${mensagem}`);
 }
 
-async function renovar1MesServidor1(clienteId) {
-    console.log('🎯 RENOVAÇÃO SERVIDOR 1 - 1 MÊS CORRETO');
+async function renovarServidor1(clienteId, periodoMeses) {
+    console.log(`🎯 RENOVAÇÃO SERVIDOR 1 - ${periodoMeses} MÊS(ES) CORRETO`);
     console.log(`🎯 Cliente: ${clienteId}`);
-    console.log(`📅 Período: 1 mês (PLANO COMPLETO)`);
+    console.log(`📅 Período: ${periodoMeses} mês(es) (PLANO COMPLETO)`);
     console.log('='.repeat(60));
     
     let browser;
@@ -41,6 +41,7 @@ async function renovar1MesServidor1(clienteId) {
         log('Lançando navegador...');
         browser = await puppeteer.launch({
             headless: false,
+            executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
             slowMo: 150,
             args: [
                 '--no-sandbox',
@@ -84,26 +85,37 @@ async function renovar1MesServidor1(clienteId) {
             await page.evaluate((text, element) => {
                 element.value = text;
                 element.dispatchEvent(new Event('input', { bubbles: true }));
-            }, 'Goncalves1', await page.evaluateHandle(() => document.activeElement));
+            }, 'Goncalves1@', await page.evaluateHandle(() => document.activeElement));
             await sleep(100);
             
-            const loginBtn = await page.$('button[type="submit"]');
+            const loginBtn = await page.$('#button-login');
             if (loginBtn) {
+                log('Clicando no botão de login...');
                 await loginBtn.click();
-                await sleep(2000);
-                log('Login realizado!', 'success');
+                await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 10000 });
+                const currentUrl = page.url();
+                log(`URL após login: ${currentUrl}`, 'info');
+                if (currentUrl.includes('dashboard')) {
+                    log('Login realizado!', 'success');
+                } else {
+                    log('Login pode ter falhado', 'warning');
+                    await page.screenshot({ path: 'debug-login.png', fullPage: true });
+                }
+            } else {
+                log('Botão de login não encontrado', 'error');
+                await page.screenshot({ path: 'debug-login-no-btn.png', fullPage: true });
             }
         }
         
         // Buscar cliente
         log(`Buscando cliente ${clienteId}...`);
-        await page.goto('https://painel.tropicalplaytv.com/clientes.php', { 
-            waitUntil: 'domcontentloaded', 
-            timeout: 30000 
+        await page.goto('https://painel.tropicalplaytv.com/iptv/clients', {
+            waitUntil: 'domcontentloaded',
+            timeout: 30000
         });
         await sleep(3000);
         
-        const searchField = await page.$('input[name="search"]');
+        const searchField = await page.$('input[type="search"]');
         if (searchField) {
             await searchField.click();
             await searchField.evaluate((el, text) => {
@@ -111,126 +123,73 @@ async function renovar1MesServidor1(clienteId) {
                 el.dispatchEvent(new Event('input', { bubbles: true }));
             }, clienteId);
             await page.keyboard.press('Enter');
+            // Tentar clicar no botão de pesquisa se existir
+            const searchBtn = await page.$('button[type="submit"]');
+            if (searchBtn) {
+                await searchBtn.click();
+                await sleep(1000);
+            }
             await sleep(2000);
+            await page.screenshot({ path: 'debug-search.png', fullPage: true });
         }
         
-        // Clicar no cliente
-        log('Procurando cliente na lista...');
-        const clienteLink = await page.$(`a[href*="${clienteId}"]`);
-        if (clienteLink) {
-            await clienteLink.click();
-            await sleep(2000);
-            log('Cliente encontrado e selecionado!', 'success');
-        } else {
-            // Tentar primeira linha se não encontrar por link
-            const firstRow = await page.$('tbody tr:first-child a');
-            if (firstRow) {
-                await firstRow.click();
-                await sleep(2000);
-                log('Usando primeira linha da tabela', 'warning');
-            } else {
-                throw new Error(`Cliente ${clienteId} não encontrado`);
+        // Procurar cliente na tabela
+        log('Procurando cliente na tabela...');
+        const rows = await page.$$('tbody tr');
+        let clienteRow = null;
+        for (const row of rows) {
+            const text = await row.evaluate(el => el.textContent);
+            if (text.includes(clienteId)) {
+                clienteRow = row;
+                break;
             }
         }
-        
-        // Renovar
-        log('Procurando botão de renovação...');
-        const renewSelectors = [
-            'button:contains("Renovar")',
-            'a:contains("Renovar")',
-            'button[onclick*="renovar"]',
-            'a[href*="renovar"]',
-            '.btn:contains("Renovar")'
-        ];
-        
-        let renewBtn = null;
-        for (const selector of renewSelectors) {
-            try {
-                renewBtn = await page.$(selector);
-                if (renewBtn) {
-                    log(`Botão de renovação encontrado: ${selector}`, 'success');
-                    break;
-                }
-            } catch (error) {
-                // Continuar tentando outros seletores
-            }
+        if (!clienteRow) {
+            throw new Error(`Cliente ${clienteId} não encontrado na tabela`);
         }
+        log('Cliente encontrado na tabela!', 'success');
         
-        if (renewBtn) {
-            log('Clicando no botão de renovação...');
-            await renewBtn.click();
-            await sleep(3000);
-            
-            // Selecionar período de 1 mês se necessário
-            log('Procurando seleção de período...');
-            const periodSelect = await page.$('select[name="periodo"]');
-            if (periodSelect) {
-                await periodSelect.select('1');
-                await sleep(2000);
-                log('Período de 1 mês selecionado!', 'success');
-            }
-            
-            // Procurar por botões de período específico
-            const periodBtns = await page.$$('button, .btn, input[type="radio"]');
-            for (const btn of periodBtns) {
-                const text = await page.evaluate(el => el.textContent || el.value, btn);
-                if (text && (text.includes('1 mês') || text.includes('1 month') || text.includes('mensal'))) {
-                    await btn.click();
-                    await sleep(1000);
-                    log(`Período selecionado: ${text}`, 'success');
-                    break;
-                }
-            }
-            
-            // Confirmar renovação
-            log('Procurando botão de confirmação...');
-            const confirmSelectors = [
-                'button:contains("Confirmar")',
-                'button:contains("Confirm")',
-                'button[type="submit"]',
-                '.btn:contains("Confirmar")',
-                'input[type="submit"]'
-            ];
-            
-            let confirmBtn = null;
-            for (const selector of confirmSelectors) {
-                try {
-                    confirmBtn = await page.$(selector);
-                    if (confirmBtn) {
-                        const btnText = await page.evaluate(btn => btn.textContent?.trim() || btn.value || '', confirmBtn);
-                        if (btnText.includes('Confirmar') || btnText.includes('Renovar') || btnText.includes('Submit')) {
-                            log(`Botão de confirmação encontrado: "${btnText}"`, 'success');
-                            break;
-                        }
-                    }
-                    confirmBtn = null;
-                } catch (error) {
-                    // Continuar tentando outros seletores
-                }
-            }
-            
-            if (confirmBtn) {
-                const btnText = await page.evaluate(btn => btn.textContent?.trim() || btn.value || '', confirmBtn);
-                log(`Confirmando renovação: "${btnText}"`, 'info');
-                await confirmBtn.click();
-                await sleep(2000);
-                log('Renovação confirmada!', 'success');
-            } else {
-                log('Botão de confirmação não encontrado', 'warning');
-            }
-            
-        } else {
-            throw new Error('Botão de renovação não encontrado');
+        // Procurar botão calendar na linha do cliente
+        log('Procurando botão calendar na linha do cliente...');
+        const calendarBtn = await clienteRow.$('i.fad.fa-calendar-alt, i.fas.fa-calendar-alt, i.far.fa-calendar-alt');
+        if (!calendarBtn) {
+            throw new Error('Botão calendar não encontrado na linha do cliente');
         }
+        await calendarBtn.click();
+        await sleep(2000);
+        
+        log('Aguardando modal de renovação...');
+        await page.waitForSelector('.bootbox.modal.fade.show', { timeout: 10000 });
+        
+        log('Preenchendo quantidade de meses...');
+        const monthsInput = await page.$('input#months');
+        if (!monthsInput) {
+            throw new Error('Campo de quantidade de meses não encontrado');
+        }
+        await monthsInput.evaluate((el, value) => {
+            el.value = value;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+        }, periodoMeses);
+        await sleep(1000);
+        
+        log('Procurando botão confirmar...');
+        const confirmBtn = await page.$('.bootbox.modal.fade.show button.btn-info.btnrenewplus');
+        if (!confirmBtn) {
+            throw new Error('Botão confirmar não encontrado');
+        }
+        await confirmBtn.click();
+        await sleep(2000);
+        
+        log('Renovação confirmada!');
         
         // Manter navegador aberto para verificação
         log('Mantendo navegador aberto por 30 segundos para verificação...', 'info');
         await sleep(30000);
         
         console.log('');
-        console.log('🎉 RENOVAÇÃO DE 1 MÊS SERVIDOR 1 CONCLUÍDA!');
+        console.log(`🎉 RENOVAÇÃO DE ${periodoMeses} MÊS(ES) SERVIDOR 1 CONCLUÍDA!`);
         console.log(`🎯 Cliente: ${clienteId}`);
-        console.log(`📅 Período: 1 mês (PLANO COMPLETO)`);
+        console.log(`📅 Período: ${periodoMeses} mês(es) (PLANO COMPLETO)`);
         
     } catch (error) {
         log(`Erro: ${error.message}`, 'error');
@@ -251,14 +210,42 @@ async function renovar1MesServidor1(clienteId) {
 }
 
 // Validação de argumentos
-const clienteId = process.argv[2];
+const args = process.argv.slice(2);
 
-if (!clienteId) {
-    console.log('❌ Erro: Cliente ID é obrigatório');
-    console.log('📖 Uso: node renovar-servidor1-1mes-correto.cjs <cliente_id>');
-    console.log('📖 Exemplo: node renovar-servidor1-1mes-correto.cjs 648718886');
+if (args.length === 0 || args.length % 2 !== 0) {
+    console.log('❌ Erro: Argumentos inválidos');
+    console.log('📖 Uso: node renovar-servidor1-1mes-correto.cjs <cliente_id> <periodo_meses> [<cliente_id2> <periodo_meses2> ...]');
+    console.log('📖 Exemplo: node renovar-servidor1-1mes-correto.cjs 648718886 3 359503850 6');
     process.exit(1);
 }
 
-// Executar renovação
-renovar1MesServidor1(clienteId).catch(console.error);
+// Criar fila de tarefas
+const queue = [];
+for (let i = 0; i < args.length; i += 2) {
+    const clienteId = args[i];
+    const periodoMeses = args[i + 1];
+    queue.push({ clienteId, periodoMeses });
+}
+
+console.log(`🎯 INICIANDO FILA DE RENOVAÇÕES - ${queue.length} cliente(s)`);
+console.log('='.repeat(60));
+
+// Processar fila sequencialmente
+(async () => {
+    for (let i = 0; i < queue.length; i++) {
+        const task = queue[i];
+        console.log(`\n🔄 PROCESSANDO ${i + 1}/${queue.length}: Cliente ${task.clienteId} - ${task.periodoMeses} mês(es)`);
+        try {
+            await renovarServidor1(task.clienteId, task.periodoMeses);
+            console.log(`✅ Cliente ${task.clienteId} processado com sucesso!`);
+        } catch (error) {
+            console.log(`❌ Erro ao processar cliente ${task.clienteId}: ${error.message}`);
+        }
+        // Pequena pausa entre renovações para evitar sobrecarga
+        if (i < queue.length - 1) {
+            console.log('⏳ Aguardando 5 segundos antes da próxima renovação...');
+            await sleep(5000);
+        }
+    }
+    console.log('\n🎉 TODAS AS RENOVAÇÕES DA FILA FORAM PROCESSADAS!');
+})();

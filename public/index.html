@@ -18,95 +18,26 @@
 
     <!-- Container Principal -->
     <main class="container">
-        <!-- Renovação nos 3 Servidores -->
+        <!-- Renovação no Servidor 1 -->
         <section class="block">
-            <h2>🎯 Renovar nos 3 Servidores</h2>
-            <p>TropicalPlayTV + SpiderTV + Premium Server</p>
-            <form id="form-3servidores" class="renewal-form">
+            <h2>🌴 Renovar no TropicalPlayTV</h2>
+            <p>Servidor 1 - Renovação automática com sistema de fila</p>
+            <form id="form-spidertv" class="renewal-form">
                 <div class="form-group">
-                    <label for="code-3servidores">Código do Cliente:</label>
-                    <input type="text" id="code-3servidores" name="code" placeholder="Ex: 648718886" required>
+                    <label for="code-spidertv">Código do Cliente:</label>
+                    <input type="text" id="code-spidertv" name="code" placeholder="Ex: 648718886" required>
                 </div>
                 <div class="form-group">
-                    <label for="months-3servidores">Período:</label>
-                    <select id="months-3servidores" name="months" required>
+                    <label for="months-spidertv">Período:</label>
+                    <select id="months-spidertv" name="months" required>
                         <option value="1">1 Mês</option>
                         <option value="3">3 Meses</option>
                         <option value="6" selected>6 Meses</option>
                         <option value="12">12 Meses</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">🚀 Renovar nos 3 Servidores</button>
+                <button type="submit" class="btn btn-primary">🚀 Renovar Cliente</button>
             </form>
-        </section>
-
-        <!-- Renovação Individual -->
-        <section class="block">
-            <h2>🎯 Renovação Individual</h2>
-            <p>Escolha um servidor específico</p>
-            
-            <!-- Servidor 1 - TropicalPlayTV -->
-            <div class="server-section">
-                <h3>🌴 Servidor 1 - TropicalPlayTV</h3>
-                <form id="form-servidor1" class="renewal-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <input type="text" id="code-servidor1" name="code" placeholder="Código do Cliente" required>
-                        </div>
-                        <div class="form-group">
-                            <select id="months-servidor1" name="months" required>
-                                <option value="1">1 Mês</option>
-                                <option value="3">3 Meses</option>
-                                <option value="6">6 Meses</option>
-                                <option value="12">12 Meses</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-secondary">Renovar</button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Servidor 2 - SpiderTV -->
-            <div class="server-section">
-                <h3>🕷️ Servidor 2 - SpiderTV</h3>
-                <form id="form-servidor2" class="renewal-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <input type="text" id="code-servidor2" name="code" placeholder="Código do Cliente" required>
-                        </div>
-                        <div class="form-group">
-                            <select id="months-servidor2" name="months" required>
-                                <option value="1">1 Mês</option>
-                                <option value="3">3 Meses</option>
-                                <option value="6">6 Meses</option>
-                                <option value="12">12 Meses</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-secondary">Renovar</button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Servidor 3 - Premium -->
-            <div class="server-section">
-                <h3>💎 Servidor 3 - Premium Server</h3>
-                <form id="form-servidor3" class="renewal-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <input type="text" id="code-servidor3" name="code" placeholder="Código do Cliente" required>
-                        </div>
-                        <div class="form-group">
-                            <select id="months-servidor3" name="months" required>
-                                <option value="1">1 Mês</option>
-                                <option value="3">3 Meses</option>
-                                <option value="6">6 Meses</option>
-                                <option value="12">12 Meses</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-secondary">Renovar</button>
-                    </div>
-                </form>
-            </div>
         </section>
 
         <!-- Status da Fila -->
